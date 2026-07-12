@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key, required this.isDark});
@@ -14,6 +15,27 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  Future<String> saveImageToAppStorage(String originalPath) async {
+    final appDir = await getApplicationDocumentsDirectory();
+
+    final imageFolder = Directory("${appDir.path}/DocVault");
+
+    if (!await imageFolder.exists()) {
+      await imageFolder.create(recursive: true);
+    }
+
+    final extension = originalPath.split(".").last;
+
+    final fileName =
+        "${DateTime.now().millisecondsSinceEpoch}_${UniqueKey()}.$extension";
+
+    final copiedImage = await File(originalPath).copy(
+      "${imageFolder.path}/$fileName",
+    );
+
+    return copiedImage.path;
+  }
+
   late bool isDark;
   @override
   void initState() {
@@ -34,12 +56,18 @@ class _HomeState extends State<Home> {
   Future<void> pickImage(setDialogState) async {
     final List<XFile> pickedImages =
         await picker.pickMultiImage(imageQuality: 85);
+
     if (pickedImages.isNotEmpty) {
+      List<String> copiedImages = [];
+
+      for (var image in pickedImages) {
+        final copiedPath = await saveImageToAppStorage(image.path);
+        copiedImages.add(copiedPath);
+      }
+
       setDialogState(() {
         isImage = true;
-        for (var image in pickedImages) {
-          images.add(image.path);
-        }
+        images.addAll(copiedImages);
       });
     }
   }
@@ -112,7 +140,13 @@ class _HomeState extends State<Home> {
 
   String searched_value = "";
   Widget build(BuildContext context) {
-    final documents = box.values.toList();
+    final documents = box.keys.map((key) {
+  final document = box.get(key);
+  return {
+    "key": key,
+    ...Map<String, dynamic>.from(document),
+  };
+}).toList();
     final filteredDocuments = documents.where((document) {
       final matchesSearch = document["name"]
           .toString()
@@ -252,7 +286,7 @@ class _HomeState extends State<Home> {
                                       return Desc(
                                         isDark: isDark,
                                         document: document,
-                                        index: index,
+                                        index: document["key"],
                                       );
                                     },
                                   ));

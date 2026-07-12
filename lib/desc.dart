@@ -4,7 +4,6 @@ import 'package:hive/hive.dart';
 import 'dart:typed_data';
 import 'package:saver_gallery/saver_gallery.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:flutter_file_dialog/flutter_file_dialog.dart';
 
@@ -503,13 +502,24 @@ class _DescState extends State<Desc> {
                                                   : Colors.black,
                                             ),
                                           ),
-                                          onPressed: () {
-                                            setState(() {
-                                              box.deleteAt(index);
-                                              Navigator.pop(context);
-                                              Navigator.pop(context);
-                                            });
-                                          },
+                                          onPressed: () async {
+for (String path in images) {
+  try {
+    final file = File(path);
+
+    if (await file.exists()) {
+      await file.delete();
+    }
+  } catch (e) {
+    debugPrint("Failed to delete $path: $e");
+  }
+}
+
+await box.delete(index);
+
+Navigator.pop(context);
+Navigator.pop(context);
+},
                                         ),
                                       ],
                                     );
