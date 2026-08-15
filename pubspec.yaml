@@ -1,38 +1,67 @@
 name: doc
-description: "A new Flutter project."
+description: "Secure offline document vault."
 publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.4.4 <4.0.0'
+  sdk: ^3.12.0
 
 dependencies:
   flutter:
     sdk: flutter
 
-  image_picker: ^1.0.0
+  # Icons
+  cupertino_icons: ^1.0.8
+
+  # Local Database
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  saver_gallery: ^5.1.0
-  pdf: ^3.11.0
-  printing: ^5.13.0
-  flutter_file_dialog: ^3.0.2
-  permission_handler: ^12.0.1
-  flutter_launcher_icons: ^0.14.4
+
+  # Image Picker
+  image_picker: ^1.2.0
+
+  # Image Compressor
+  flutter_image_compress: ^2.4.0
+
+  # Local Storage
   path_provider: ^2.1.5
 
-  cupertino_icons: ^1.0.6
+  # Security
+  crypto: ^3.0.6
+  local_auth: ^2.3.0
+
+  # Permissions
+  permission_handler: ^12.0.1
+
+  # PDF Generation & Printing
+  pdf: ^3.11.3
+  printing: ^5.14.2
+
+  # Save Files
+  flutter_file_dialog: ^3.0.2
+  saver_gallery: ^5.1.0
+
+  # Share Files
+  share_plus: ^11.1.0
+
+  # Open Files
+  open_filex: ^4.7.0
+
+  # Utilities
+  intl: ^0.20.2
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
-  flutter_lints: ^3.0.0
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
-  
+
   assets:
     - assets/logo.png
 

@@ -141,12 +141,12 @@ class _HomeState extends State<Home> {
   String searched_value = "";
   Widget build(BuildContext context) {
     final documents = box.keys.map((key) {
-  final document = box.get(key);
-  return {
-    "key": key,
-    ...Map<String, dynamic>.from(document),
-  };
-}).toList();
+      final document = box.get(key);
+      return {
+        "key": key,
+        ...Map<String, dynamic>.from(document),
+      };
+    }).toList();
     final filteredDocuments = documents.where((document) {
       final matchesSearch = document["name"]
           .toString()
@@ -154,7 +154,7 @@ class _HomeState extends State<Home> {
           .startsWith(searched_value.toLowerCase());
 
       final matchesCategory = filtered_category == "All" ||
-          document["category"] == filtered_category;
+    (document["category"]?.toString() ?? "Other") == filtered_category;
 
       return matchesSearch && matchesCategory;
     }).toList();
@@ -306,7 +306,8 @@ class _HomeState extends State<Home> {
                                           getCategoryIcon(document["category"]),
                                     ),
                                     title: Text(
-                                      document["name"],
+                                      document["name"]?.toString() ??
+                                          "Unnamed Document",
                                       style: TextStyle(
                                           color: isDark
                                               ? Colors.white
@@ -314,13 +315,11 @@ class _HomeState extends State<Home> {
                                           fontWeight: FontWeight.bold),
                                     ),
                                     subtitle: Text(
-                                      document["category"],
-                                      style: TextStyle(
-                                        color: isDark
-                                            ? Colors.white
-                                            : Colors.black,
-                                      ),
-                                    ),
+  document["category"]?.toString() ?? "Other",
+  style: TextStyle(
+    color: isDark ? Colors.white : Colors.black,
+  ),
+),
                                   ),
                                 ),
                               );
@@ -597,13 +596,15 @@ class _HomeState extends State<Home> {
                                           backgroundColor: Colors.cyan),
                                       onPressed: () {
                                         box.add({
-                                          "name": document_name.text,
-                                          "category": selected_category,
-                                          "images": List.from(
-                                              images), // Good practice
+                                          "name":
+                                              document_name.text.trim().isEmpty
+                                                  ? "Unnamed Document"
+                                                  : document_name.text.trim(),
+                                          "category":
+                                              selected_category ?? "Other",
+                                          "images": List<String>.from(images),
                                         });
 
-// Clear everything for next document
                                         document_name.clear();
                                         selected_category = null;
                                         images.clear();

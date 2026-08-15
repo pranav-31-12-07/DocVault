@@ -1,5 +1,9 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:doc/home.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -10,15 +14,99 @@ class Login extends StatefulWidget {
 
 class _LoginState extends State<Login> {
   final password = TextEditingController();
-  final realPassword = "pranav@2007";
+
+  final settings = Hive.box("settings");
 
   bool isDark = false;
   bool hidePassword = true;
+  bool isLoading = false;
+
+  String hashPassword(String value) {
+    return sha256.convert(utf8.encode(value)).toString();
+  }
 
   @override
   void dispose() {
     password.dispose();
     super.dispose();
+  }
+
+  Future<void> login() async {
+    if (password.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please enter your password"),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final savedPassword = settings.get("password");
+
+      if (savedPassword == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("No password found. Please create an account."),
+          ),
+        );
+
+        setState(() {
+          isLoading = false;
+        });
+
+        return;
+      }
+
+      final enteredPassword = hashPassword(password.text);
+
+      if (enteredPassword == savedPassword) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Login Successful"),
+          ),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) {
+              return Home(
+                isDark: isDark,
+              );
+            },
+          ),
+        );
+      } else {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Incorrect Password"),
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Login failed: $e"),
+        ),
+      );
+    }
+
+    if (mounted) {
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -49,23 +137,23 @@ class _LoginState extends State<Login> {
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 30),
+            padding: const EdgeInsets.symmetric(horizontal: 30),
             child: Transform.translate(
               offset: const Offset(0, -100),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-              
+
                   // Logo
                   const Icon(
                     Icons.shield_outlined,
                     color: Colors.cyan,
                     size: 80,
                   ),
-              
+
                   const SizedBox(height: 15),
-              
+
+                  // Title
                   Text(
                     "DocVault",
                     style: TextStyle(
@@ -76,9 +164,9 @@ class _LoginState extends State<Login> {
                           : Colors.black,
                     ),
                   ),
-              
+
                   const SizedBox(height: 8),
-              
+
                   Text(
                     "Your Personal Document Arsenal",
                     style: TextStyle(
@@ -88,10 +176,10 @@ class _LoginState extends State<Login> {
                       fontSize: 14,
                     ),
                   ),
-              
+
                   const SizedBox(height: 40),
-              
-                  // Password Field
+
+                  // Password
                   TextFormField(
                     controller: password,
                     obscureText: hidePassword,
@@ -102,8 +190,8 @@ class _LoginState extends State<Login> {
                     ),
                     decoration: InputDecoration(
                       labelText: "Password",
-                      labelStyle: TextStyle(
-                        color: Colors.cyan
+                      labelStyle: const TextStyle(
+                        color: Colors.cyan,
                       ),
                       hintText: "Enter Password",
                       hintStyle: TextStyle(
@@ -111,11 +199,12 @@ class _LoginState extends State<Login> {
                             ? Colors.grey.shade400
                             : Colors.grey.shade600,
                       ),
+
                       prefixIcon: const Icon(
                         Icons.lock_outline,
                         color: Colors.cyan,
                       ),
-              
+
                       suffixIcon: IconButton(
                         onPressed: () {
                           setState(() {
@@ -126,42 +215,44 @@ class _LoginState extends State<Login> {
                           hidePassword
                               ? Icons.visibility
                               : Icons.visibility_off,
-                              color: isDark ? Colors.white : Colors.black,
+                          color: isDark
+                              ? Colors.white
+                              : Colors.black,
                         ),
                       ),
-              
+
                       filled: true,
                       fillColor: isDark
                           ? Colors.grey.shade900
                           : Colors.grey.shade100,
-              
+
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-              
+
                       enabledBorder: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16),
                         borderSide: const BorderSide(
                           color: Colors.cyan,
                         ),
                       ),
-              
+
                       focusedBorder: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(16),
+                        borderRadius: BorderRadius.circular(16),
                         borderSide: const BorderSide(
                           color: Colors.cyan,
                           width: 2,
                         ),
                       ),
                     ),
+                    onFieldSubmitted: (_) {
+                      login();
+                    },
                   ),
-              
+
                   const SizedBox(height: 25),
-              
-                  // Login Button
+
+                  // Login button
                   SizedBox(
                     width: double.infinity,
                     height: 55,
@@ -169,51 +260,32 @@ class _LoginState extends State<Login> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.cyan,
                         shape: RoundedRectangleBorder(
-                          borderRadius:
-                              BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      onPressed: () {
-                        if (password.text == realPassword) {
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text("Login Successful"),
-                            ),
-                          );
-              
-                          Navigator.pushReplacement(
-                            context, 
-                            PageRouteBuilder(
-                              pageBuilder: (context, animation, secondaryAnimation) {
-                                return Home(isDark: isDark,);
-                              },
+                      onPressed: isLoading ? null : login,
+                      child: isLoading
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                            );
-                        } else {
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(
-                            const SnackBar(
-                              content:
-                                  Text("Login Failed"),
+                          : const Text(
+                              "Login",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
-                          );
-                        }
-                      },
-                      child: const Text(
-                        "Login",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                        ),
-                      ),
                     ),
                   ),
-              
+
                   const SizedBox(height: 35),
-              
+
                   Text(
                     "Your documents stay secure on your device",
                     textAlign: TextAlign.center,
